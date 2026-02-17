@@ -1,0 +1,16 @@
+{
+  "name": "code-app",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+
+  },
+  "dependencies": {
+    "electron": "^40.4.1"
+  }
+}
