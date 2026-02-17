@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuestList — Classroom Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Exo+2:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+</head>
+<body>
+
+  <!-- ======================================================
+       CONFETTI CONTAINER (JS-generated particles)
+  ====================================================== -->
+  <div id="confetti-wrap"></div>
+
+  <!-- ======================================================
+       TOAST NOTIFICATION
+  ====================================================== -->
+  <div id="toast"></div>
+
+  <!-- ======================================================
+       MODAL: Enter Student Name
+  ====================================================== -->
+  <div class="modal-overlay open" id="modal-name">
+    <div class="modal">
+      <span class="modal-emoji">🧙</span>
+      <h2 class="modal-title gradient-text">Welcome, Adventurer!</h2>
+      <p class="modal-body">
+        Enter your name to begin.<br />
+        Complete tasks given by your teacher to earn XP, level up, and choose your own rewards!
+      </p>
+      <input
+        class="modal-input"
+        id="input-name"
+        type="text"
+        placeholder="Your name…"
+        maxlength="28"
+        autofocus
+        onkeydown="if(event.key==='Enter') saveName()"
+      />
+      <button class="btn btn-full" onclick="saveName()">✨ Begin Quest</button>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       MODAL: Level Up — Choose Your Reward
+  ====================================================== -->
+  <div class="modal-overlay" id="modal-reward">
+    <div class="modal">
+      <span class="modal-emoji">🎉</span>
+      <h2 class="modal-title gradient-text">LEVEL UP!</h2>
+      <p class="modal-body">
+        You reached <strong id="modal-new-level"></strong>!<br />
+        Pick one reward — you earned it!
+      </p>
+      <!-- 4 reward option cards rendered by JS -->
+      <div class="reward-picker" id="reward-picker-grid"></div>
+      <button class="btn btn-gold btn-full" id="btn-claim" disabled onclick="claimReward()">
+        🏆 Claim Reward
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       MODAL: QR Scanned — Choose Task Type
+  ====================================================== -->
+  <div class="modal-overlay" id="modal-qr-type">
+    <div class="modal">
+      <span class="modal-emoji">📋</span>
+      <h2 class="modal-title" style="color:#fff; font-size:1.1rem;">New Task Scanned!</h2>
+      <p class="modal-body">
+        Task from teacher:<br />
+        <strong id="qr-task-name" class="highlight-text"></strong>
+      </p>
+      <p class="modal-body" style="margin-top:-12px; font-size:.85rem;">
+        What type of task is this?
+      </p>
+      <div class="type-btn-row">
+        <button class="btn btn-performance" onclick="addScannedTask('performance')">
+          ⚡ Performance Task<br /><small>+50 XP</small>
+        </button>
+        <button class="btn btn-activity" onclick="addScannedTask('activity')">
+          📝 Activity<br /><small>+25 XP</small>
+        </button>
+      </div>
+      <button class="btn btn-ghost btn-full mt-sm" onclick="cancelQRModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       APP WRAPPER
+  ====================================================== -->
+  <div class="app">
+
+    <!-- ─────────────────────────────────────────────────
+         HEADER
+    ───────────────────────────────────────────────── -->
+    <header class="header">
+      <h1>⚔️ QuestList</h1>
+      <p class="tagline">classroom edition — earn xp · level up · choose rewards</p>
+    </header>
+
+    <!-- ─────────────────────────────────────────────────
+         PLAYER CARD
+    ───────────────────────────────────────────────── -->
+    <section class="player-card">
+      <div class="player-top">
+        <div class="avatar" id="avatar" onclick="openNameModal()" title="Tap to change name">
+          <div class="avatar-ring"></div>
+          🧙
+        </div>
+        <div class="player-info">
+          <div class="name-level-row">
+            <span class="player-name" id="player-name">Adventurer</span>
+            <span class="level-badge" id="level-badge">LVL 0</span>
+          </div>
+          <div class="player-title" id="player-title">Novice Scholar</div>
+        </div>
+      </div>
+
+      <!-- XP Progress -->
+      <div class="xp-section">
+        <div class="xp-label-row">
+          <span class="xp-label">⚡ XP Progress</span>
+          <span class="xp-numbers" id="xp-numbers">0 / 50 XP</span>
+        </div>
+        <div class="xp-track">
+          <div class="xp-fill" id="xp-fill" style="width:0%"></div>
+        </div>
+        <div class="xp-hint" id="xp-hint">50 XP needed to reach Level 1</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-num" id="stat-active">0</div>
+          <div class="stat-lbl">📋 Active</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-done">0</div>
+          <div class="stat-lbl">✅ Done</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-total-xp">0</div>
+          <div class="stat-lbl">⚡ Total XP</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-rewards">0</div>
+          <div class="stat-lbl">🏆 Rewards</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────────
+         TABS
+    ───────────────────────────────────────────────── -->
+    <nav class="tabs">
+      <div class="tab active" data-tab="tasks"   onclick="switchTab('tasks',   this)">📋 Tasks</div>
+      <div class="tab"        data-tab="scanner" onclick="switchTab('scanner', this)">📷 Scan QR</div>
+      <div class="tab"        data-tab="rewards" onclick="switchTab('rewards', this)">🏆 Rewards</div>
+    </nav>
+
+    <!-- ─────────────────────────────────────────────────
+         PANEL: TASKS
+    ───────────────────────────────────────────────── -->
+    <section class="panel visible" id="panel-tasks">
+
+      <h3 class="section-title">⚔️ My Quests</h3>
+
+      <!-- Empty state shown when no tasks exist -->
+      <div class="empty-state" id="empty-state">
+        <span class="empty-icon">🗺️</span>
+        <p class="empty-title">No Quests Yet</p>
+        <p class="empty-sub">
+          Your teacher will assign tasks via QR code.<br />
+          Go to the <strong>📷 Scan QR</strong> tab to receive your first quest!
+        </p>
+      </div>
+
+      <!-- Task cards injected by JS -->
+      <div class="task-list" id="task-list"></div>
+
+    </section>
+
+    <!-- ─────────────────────────────────────────────────
+         PANEL: QR SCANNER
+    ───────────────────────────────────────────────── -->
+    <section class="panel" id="panel-scanner">
+      <div class="qr-card">
+
+        <h3 class="section-title">📷 Teacher QR Scanner</h3>
+
+        <!-- Info banner -->
+        <div class="info-banner">
+          <span class="info-icon">🧑‍🏫</span>
+          <span>Your teacher will show you a QR code for each task. Scan it here to add it to your quest list!</span>
+        </div>
+
+        <!-- Camera buttons -->
+        <div class="btn-row">
+          <button class="btn"       id="btn-start-scan" onclick="startScan()">📷 Start Camera</button>
+          <button class="btn btn-ghost" id="btn-stop-scan" onclick="stopScan()" style="display:none">⏹ Stop</button>
+        </div>
+
+        <!-- Video feed with overlay -->
+        <div id="video-wrap">
+          <video id="qr-video" autoplay playsinline muted></video>
+          <div class="scan-overlay">
+            <div class="scan-frame">
+              <span class="corner tl"></span>
+              <span class="corner tr"></span>
+              <span class="corner bl"></span>
+              <span class="corner br"></span>
+              <div class="scan-beam"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden canvas for jsQR decoding -->
+        <canvas id="qr-canvas"></canvas>
+
+        <!-- Detected result banner -->
+        <div class="qr-result" id="qr-result">
+          <p class="qr-result-label">✅ QR Code Detected!</p>
+          <p class="qr-result-text" id="qr-result-text"></p>
+          <p class="qr-result-note">Is this the correct task from your teacher?</p>
+          <div class="btn-row">
+            <button class="btn btn-green btn-sm" onclick="acceptScan()">✅ Yes, Add Task</button>
+            <button class="btn btn-ghost btn-sm"  onclick="rejectScan()">🔄 Scan Again</button>
+          </div>
+        </div>
+
+        <!-- XP legend -->
+        <div class="xp-legend">
+          <h4 class="xp-legend-title">⚡ XP Values</h4>
+          <div class="xp-legend-row">
+            <span class="xp-tag performance">⚡ Performance Task</span>
+            <span class="xp-val">+50 XP</span>
+          </div>
+          <div class="xp-legend-row">
+            <span class="xp-tag activity">📝 Activity</span>
+            <span class="xp-val">+25 XP</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────────
+         PANEL: REWARDS
+    ───────────────────────────────────────────────── -->
+    <section class="panel" id="panel-rewards">
+
+      <div class="rewards-intro">
+        Every time you <strong>level up</strong>, you pick <strong>one reward</strong> from a random selection!
+        Rewards are real — show this screen to your teacher to claim yours.
+      </div>
+
+      <h3 class="section-title">🏆 Earned Rewards</h3>
+      <div id="earned-rewards-list">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- XP Roadmap -->
+      <h3 class="section-title mt-md">📊 XP Roadmap</h3>
+      <div id="xp-roadmap">
+        <!-- Filled by JS -->
+      </div>
+
+    </section>
+
+  </div><!-- /.app -->
+
+  <script src="app.js"></script>
+
+</body>
+</html>
